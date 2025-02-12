@@ -1,0 +1,6 @@
+@practicaWebApi2_HostAddress = http://localhost:5214
+
+GET {{practicaWebApi2_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
