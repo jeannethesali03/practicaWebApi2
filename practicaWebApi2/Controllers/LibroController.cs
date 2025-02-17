@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using practicaWebApi2.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace practicaWebApi2.Controllers
 {
@@ -42,13 +43,13 @@ namespace practicaWebApi2.Controllers
         [Route("GetById/{id}")]
         public IActionResult Get(int id)
         {
-            var LibroAutor = (from Autor in _bibliotecaContext.Autor
-                              join Libro in _bibliotecaContext.Libro on Autor.id_autor equals Libro.id_autor
-                              where Autor.id_autor == id
+            var LibroAutor = (from Libro in _bibliotecaContext.Libro
+                              join Autor in _bibliotecaContext.Autor on Libro.id_libro equals Autor.id_autor
+                              where Libro.id_libro == id
                               select new
-                              {
-                                  Autor.nombre,
-                                  Libro = Libro.titulo
+                              {                                  
+                                  Libro = Libro.titulo,
+                                  Autor.nombre
                               }).ToList();
 
             if (LibroAutor == null)
@@ -56,6 +57,112 @@ namespace practicaWebApi2.Controllers
                 return NotFound();
             }
             return Ok(LibroAutor);
+        }
+
+
+        [HttpPost]
+        [Route("Add")]
+        public IActionResult GuardarLibro([FromBody] Libro libro)
+        {
+            try
+            {
+                _bibliotecaContext.Libro.Add(libro);
+                _bibliotecaContext.SaveChanges();
+                return Ok(libro);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPut]
+        [Route("actualizar/{id}")]
+        public IActionResult ActualizarEquipo(int id, [FromBody] Libro libroModificar)
+        {
+            Libro? libroActual = (from Libro in _bibliotecaContext.Libro
+                                  where Libro.id_libro == id 
+                                  select Libro).FirstOrDefault();
+                        
+            if (libroActual == null) 
+            {
+                return NotFound();
+            }
+
+            libroActual.titulo = libroModificar.titulo; 
+            libroActual.anyo_publicacion = libroModificar.anyo_publicacion;
+            libroActual.resumen = libroModificar.resumen;
+
+            _bibliotecaContext.Entry(libroActual).State = EntityState.Modified; 
+            _bibliotecaContext.SaveChanges();
+
+            return Ok(libroModificar);
+        }
+
+
+        [HttpDelete]
+        [Route("eliminar/{id}")]
+        public IActionResult EliminarLibro(int id)
+        {            
+            Libro? libro = (from Libro in _bibliotecaContext.Libro
+                            where Libro.id_libro == id 
+                            select Libro).FirstOrDefault();
+
+            if (libro == null) 
+            {
+                return NotFound();
+            }
+
+            _bibliotecaContext.Libro.Attach(libro);
+            _bibliotecaContext.Libro.Remove(libro);
+            _bibliotecaContext.SaveChanges(); 
+
+            return Ok(libro);
+        }
+
+
+        [HttpPut]
+        [Route("buscarAfter2000")]
+        public IActionResult Buscar ()
+        {
+            var librosEncontrados = (from Libro in _bibliotecaContext.Libro
+                                     where Libro.anyo_publicacion>2000
+                                     select Libro).ToList();
+            return Ok(librosEncontrados);
+        }
+
+
+        [HttpGet]
+        [Route("GetPaginado")]
+        public IActionResult GetPaginado()
+        {
+            List<Libro> listadoLibro = (from Libro in _bibliotecaContext.Libro select Libro).Skip(10).ToList();
+
+
+            if (listadoLibro.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(listadoLibro);
+        }
+
+
+        [HttpGet]
+        [Route("GetByTitulo")]
+        public IActionResult GetByTitulo(string titulo)
+        {
+            var listadoLibro = (from Libro in _bibliotecaContext.Libro
+                                where Libro.titulo.Contains(titulo) //constains es el like '%---%'
+                                select Libro.titulo).ToList();
+
+            if (listadoLibro.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(listadoLibro);
         }
     }
 }

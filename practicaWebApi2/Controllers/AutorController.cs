@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using practicaWebApi2.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Metrics;
 
 namespace practicaWebApi2.Controllers
 {
@@ -44,26 +45,26 @@ namespace practicaWebApi2.Controllers
         [Route("GetById/{id}")]
         public IActionResult Get(int id)
         {
-            var AutorLibro = (from Autor in _bibliotecaContext.Autor
-                            join Libro in _bibliotecaContext.Libro on Autor.id_autor equals Libro.id_autor
+            var AutorLibro = (from Libro in _bibliotecaContext.Libro
+                                join Autor in _bibliotecaContext.Autor on Libro.id_autor equals Autor.id_autor
                                 where Autor.id_autor == id
                                 select new
                                 {
                                     Autor.nombre,
-                                    Libro = Libro.titulo
+                                    Libro.titulo
                                 }).ToList();
 
             if (AutorLibro == null)
             {
                 return NotFound();
             }
-            return Ok(AutorLibro);
+            return Ok(AutorLibro );
         }
 
 
         [HttpPost]
         [Route("Add")]
-        public IActionResult GuardarEquipo([FromBody] Autor autor)
+        public IActionResult GuardarAutor([FromBody] Autor autor)
         {
             try
             {
@@ -112,7 +113,7 @@ namespace practicaWebApi2.Controllers
 
         [HttpDelete]
         [Route("eliminar/{id}")]
-        public IActionResult EliminarEquipo(int id)
+        public IActionResult EliminarAutori(int id)
         {
             // Para eliminar un registro, se obtiene el registro original de la base de datos
             // al cual eliminaremos
@@ -132,6 +133,20 @@ namespace practicaWebApi2.Controllers
             _bibliotecaContext.SaveChanges(); // _equiposContexto corregido
 
             return Ok(autor);
+        }
+
+        [HttpPut]
+        [Route("ConteoLibrosPorAutor")]
+        public IActionResult Buscar(int id)
+        {
+            var conteoLibros = (from Libro in _bibliotecaContext.Libro
+                                where Libro.id_autor == id
+                                select Libro).Count();
+            if (conteoLibros == null) 
+            {
+                return NotFound();
+            }
+            return Ok(conteoLibros);
         }
     }
 }
