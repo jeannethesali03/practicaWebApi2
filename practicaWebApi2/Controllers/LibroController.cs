@@ -164,5 +164,92 @@ namespace practicaWebApi2.Controllers
 
             return Ok(listadoLibro);
         }
+
+        [HttpGet]
+        [Route("LibrosMasRecientes")]
+        public IActionResult LibrosMasRecientes()
+        {
+            var ordenMasRecientes = _bibliotecaContext.Libro
+                .OrderByDescending(Libro => Libro.anyo_publicacion) // Asegúrate de que 'FechaPublicacion' es el nombre correcto del campo de fecha
+                .ToList(); // Ejecuta la consulta y obtén los resultados en una lista
+
+            if (ordenMasRecientes == null || !ordenMasRecientes.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(ordenMasRecientes);
+        }
+
+        [Route("CantidadLibrosPorAnio/{anio}")]
+        [HttpGet]
+        public IActionResult CantidadLibrosPorAnio(int anio)
+        {
+            var cantidad = _bibliotecaContext.Libro
+                .Where(l => l.anyo_publicacion == anio) // Filtra por el año ingresado
+                .Count(); // Cuenta los libros en ese año
+
+            if (cantidad == 0)
+            {
+                return NotFound($"No hay libros registrados en el año {anio}.");
+            }
+
+            return Ok(new { Anio = anio, Cantidad = cantidad });
+        }
+
+
+        [HttpGet]
+        [Route("VerificarLibro/{id}")]
+        public IActionResult VerificarLibro(int id)
+        {
+            var LibroAutor = (from Libro in _bibliotecaContext.Libro
+                              join Autor in _bibliotecaContext.Autor on Libro.id_libro equals Autor.id_autor
+                              where Libro.id_libro == id
+                              select new
+                              {
+                                  Libro = Libro.titulo,
+                                  Autor.nombre
+                              }).ToList();
+
+            if (LibroAutor == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                string aaa = "Sí tiene libros publicados";
+                return Ok(aaa);
+            }
+        }
+
+
+        [HttpGet]
+        [Route("PrimerLibroPorAutor/{idAutor}")]
+        public IActionResult PrimerLibroPorAutor(int idAutor)
+        {
+            var primerLibro = _bibliotecaContext.Libro
+                .Where(l => l.id_autor == idAutor)
+                .OrderBy(l => l.anyo_publicacion) // Ordenar por el libro más antiguo
+                .FirstOrDefault();
+
+            if (primerLibro == null)
+            {
+                return NotFound($"No se encontró ningún libro para el autor con ID {idAutor}.");
+            }
+
+            var autor = _bibliotecaContext.Autor
+                .Where(a => a.id_autor == idAutor)
+                .Select(a => a.nombre)
+                .FirstOrDefault();
+
+            return Ok(new
+            {
+                Libro = primerLibro.titulo,
+                Autor = autor,
+                AñoPublicacion = primerLibro.anyo_publicacion
+            });
+        }
+
+
     }
 }

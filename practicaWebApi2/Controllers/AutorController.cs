@@ -148,5 +148,33 @@ namespace practicaWebApi2.Controllers
             }
             return Ok(conteoLibros);
         }
+
+
+        [HttpPut]
+        [Route("AutorConMasLibros")]
+        public IActionResult AutorConMasLibros()
+        {
+            var findTop1 = (from Autor in _bibliotecaContext.Autor
+                            join Libro in _bibliotecaContext.Libro on Autor.id_autor equals Libro.id_autor
+                            group Autor by new { Autor.id_autor, Autor.nombre } into grupo //haciendo un group by
+                            orderby grupo.Count() descending //contando de manera desendente
+                            select grupo.Key.nombre)
+                      .ToList();
+
+            //FirstOrDefault()   //poniendole el primero
+            //.Skip(2)          //Saltandonos 2 (paginado)
+            //.Take(1)          //poniendo solo uno
+            //.ToList();        //poniendo la lista
+
+            if (findTop1 == null)
+            {
+                return NotFound();
+            }
+            return Ok(findTop1);
+        }
+
+
+       
+
     }
 }
